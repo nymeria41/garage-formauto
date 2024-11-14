@@ -1,12 +1,16 @@
 package org.example.formauto.services;
 
 import org.example.formauto.DTO.VoitureDTO;
+import org.example.formauto.entities.Image;
 import org.example.formauto.entities.Voiture;
 import org.example.formauto.repositories.VoitureRepository;
+import org.example.formauto.utils.ImageUtils;
 import org.example.formauto.utils.VoitureMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -16,6 +20,25 @@ public class VoitureService {
 
     @Autowired
     private VoitureRepository voitureRepository;
+
+
+    public VoitureService(ImageService imageService) {
+    }
+
+
+    public Voiture addImage(Long voitureId, MultipartFile imageFile) throws IOException {
+        Voiture voiture = voitureRepository.findById(voitureId)
+            .orElseThrow(() -> new IllegalArgumentException("Car not found"));
+        String imageName = imageFile.getOriginalFilename();
+
+        Image image = Image.builder()
+                .name(imageName)
+                .type(imageFile.getContentType())
+                .imageData(ImageUtils.compressImage(imageFile.getBytes()))
+                .build();
+
+        voiture.getImages().add(image);
+        return voitureRepository.save(voiture);}
 
     // Méthode pour récupérer toutes les voitures sous forme de DTO
     public List<VoitureDTO> findAll() {

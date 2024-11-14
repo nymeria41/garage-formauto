@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 
 @Setter
 @Getter
@@ -21,5 +23,17 @@ public class Voiture {
     private String modele;
     private int annee;
     private double prix;
+    private String description;
+    private String carburant;
+    private String type;
+    private int vitesse;
+    private int cylindre;
+    private int reservoir;
+    private String boite;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images;
+
+
 
 }

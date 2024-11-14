@@ -1,11 +1,16 @@
 package org.example.formauto.controller;
 
 import org.example.formauto.DTO.VoitureDTO;
+import org.example.formauto.entities.Voiture;
 import org.example.formauto.services.VoitureService;
+import org.example.formauto.utils.VoitureMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +20,9 @@ public class VoitureController {
 
     @Autowired
     private VoitureService voitureService;
+    @Autowired
+    private  VoitureMapper voitureMapper;
+
 
     // Récupérer toutes les voitures
     @GetMapping
@@ -31,10 +39,19 @@ public class VoitureController {
     }
 
     // Créer une nouvelle voiture
-    @PostMapping
-    public ResponseEntity<VoitureDTO> createVoiture(@RequestBody VoitureDTO voitureDTO) {
-        VoitureDTO savedVoiture = voitureService.save(voitureDTO);
-        return ResponseEntity.ok(savedVoiture); // Utilise directement le DTO sauvegardé
+    @PostMapping(consumes = {"multipart/form-data"})
+    public ResponseEntity<?> createVoiture(@ModelAttribute VoitureDTO voitureDTO,@RequestParam(value = "images", required = false) List<MultipartFile> images) {
+
+        // Ajouter les images reçues dans la demande au DTO
+        voitureDTO.setImages(images);
+
+        voitureService.save(voitureDTO);
+
+        // Convertir le DTO en entité Voiture
+        Voiture voiture = voitureMapper.toEntity(voitureDTO);
+
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(voiture);
     }
 
     // Mettre à jour une voiture existante
@@ -59,6 +76,16 @@ public class VoitureController {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{voitureId}/addImage")
+    public ResponseEntity<?> addImageToCar(@PathVariable Long voitureId,@RequestParam("image") MultipartFile file) {
+        try {
+            Voiture voiture = voitureService.addImage(voitureId, file);
+            return ResponseEntity.status(HttpStatus.OK).body("Image added successfully to car with ID: " + voitureId);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload image: " + e.getMessage());
         }
     }
 }
